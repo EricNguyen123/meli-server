@@ -1,8 +1,17 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserEntity } from 'src/entities/user.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { UserDto } from 'src/dto/user.dto';
+import { RegisterDto } from 'src/dto/register.dto';
 
 @Controller('users')
 export class UserController {
@@ -44,5 +53,27 @@ export class UserController {
     @Body() data: UserDto,
   ): Promise<UserEntity> {
     return this.usersService.updateUser(id, data);
+  }
+
+  @Delete('delete/user')
+  @UseGuards(JwtAuthGuard)
+  deleteUser(
+    @Query() { id }: { id: string },
+  ): Promise<{ id: string; status: number; message: string }> {
+    return this.usersService.deleteUser(id);
+  }
+
+  @Delete('delete/users')
+  @UseGuards(JwtAuthGuard)
+  deleteUsers(
+    @Body() data: { id: string }[],
+  ): Promise<{ ids: string[]; status: number; message: string }> {
+    return this.usersService.deleteUsers(data);
+  }
+
+  @Post('register/user')
+  @UseGuards(JwtAuthGuard)
+  async registerUser(@Body() registerDto: RegisterDto): Promise<UserEntity> {
+    return await this.usersService.registerUser(registerDto);
   }
 }

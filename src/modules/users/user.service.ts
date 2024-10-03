@@ -5,6 +5,7 @@ import { UserDto } from 'src/dto/user.dto';
 import { UserEntity } from 'src/entities/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { RegisterDto } from 'src/dto/register.dto';
 
 @Injectable()
 export class UserService {
@@ -15,6 +16,48 @@ export class UserService {
 
   async create(createUserDto: UserDto) {
     return await this.usersRepository.save(createUserDto);
+  }
+
+  async registerUser(registerDto: RegisterDto): Promise<UserEntity> {
+    const { password, name, email } = registerDto;
+    const user = await this.usersRepository.save({
+      name: name,
+      email: email,
+      password: bcrypt.hashSync(password, 10),
+    });
+    if (!user) throw new NotFoundException('User created fail');
+    delete user.password;
+    delete user.createdDate;
+    delete user.updatedDate;
+    return user;
+  }
+
+  async deleteUser(id: string) {
+    const result = await this.usersRepository.delete(id);
+
+    if (result.affected === 0) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+    return {
+      id: id,
+      status: 200,
+      message: 'User deleted successfully',
+    };
+  }
+
+  async deleteUsers(data: { id: string }[]) {
+    const ids = data.map((item) => item.id);
+    const result = await this.usersRepository.delete(ids);
+
+    if (result.affected === 0) {
+      throw new NotFoundException(`No users found for the given IDs`);
+    }
+
+    return {
+      ids: ids,
+      status: 200,
+      message: 'Users deleted successfully',
+    };
   }
 
   async updateUser(id: string, data: UserDto): Promise<UserEntity> {
